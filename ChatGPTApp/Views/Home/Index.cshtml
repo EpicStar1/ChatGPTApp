@@ -1,0 +1,125 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<section class="msger">
+    <header class="msger-header">
+        <div class="msger-header-title">
+            <i class="fa fa-comment-alt"></i> Ask Something
+        </div>
+        <div class="msger-header-options">
+            <span id="trainGpt"><i class="fa fa-cog"></i></span>
+        </div>
+    </header>
+
+    <main class="msger-chat">
+    </main>
+
+    <form class="msger-inputarea">
+        <input id="messageInput" type="text" class="msger-input" placeholder="Enter your query..." />
+        <button id="sendButton" class="msger-send-btn"><i class="fa-regular fa-paper-plane fa-lg"></i></button>
+    </form>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+
+<script type="text/javascript">
+    const imgBOT = "/images/bot.png";
+    const imgPerson = "/images/user.png";
+    const nameBOT = "Open AI";
+    const namePerson = "You";
+
+    $(function () {      
+        addChatMessage(nameBOT, imgBOT, "right", "Hey! How may I help you?");
+
+        $('#trainGpt').click(function(){
+            debugger;
+            var url = '/api/Gpt/TrainGPT';
+            $.ajax({
+                url: url,
+                type: 'GET',
+                async: true,
+                contentType: 'application/json',
+                success: function (response) {
+                    debugger;
+                },
+                error: function (err) {
+                    debugger;
+                }
+            });
+        });
+
+        $('#sendButton').click(function () {
+            var message = $('#messageInput').val();
+            askChatGPT(message);
+            $('#messageInput').val('');
+            return false;
+        });
+
+        function askChatGPT(message) {
+            debugger;
+            //var url = '/api/ChatGPT/AskChatGPT';
+            //var url = '/api/Gpt/ChatGPTDavinciText';
+            var url = '/api/Gpt/ChatGPTTurbo';
+            addChatMessage(namePerson, imgPerson, "left", message);
+
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: JSON.stringify(message),
+                async: true,
+                contentType: 'application/json',
+                success: function (response) {
+                    if (response != null && response.data != null){
+                        addChatMessage(nameBOT, imgBOT, "right", response.data);
+                    }
+                    else
+                    {
+                        addChatMessage(nameBOT, imgBOT, "right", response);
+                    }
+                    
+                    $('.imgLoader').hide();
+                },
+                error: function (err){
+                    addChatMessage(nameBOT, imgBOT, "right", "Error: " + err.statusText + " with Status Code: " + err.status );
+                    $('.imgLoader').hide();
+                }
+            });
+        }
+
+        function addChatMessage(name, img, side, text) {
+            const msgHTML = `
+                        <div class="msg ${side}-msg">
+                            <div class="msg-img" style="background-image: url(${img})"></div>
+
+                            <div class="msg-bubble">
+                            <div class="msg-info">
+                                <div class="msg-info-name">${name}</div>
+                                <div class="msg-info-time">${formatDate(new Date())}</div>
+                            </div>
+
+                            <div class="msg-text">${text}</div>
+                            </div>
+                        </div>
+                        `;
+
+            $(".msger-chat").append($(msgHTML));
+
+            if (side == "left") {
+                var loaderHTML = `<div id="dvLoader"><img class="imgLoader" src="/images/loader.gif" /></div>`;
+                $(".msger-chat").append($(loaderHTML));
+            }
+
+            $(".msger-chat").scrollTop($(".msger-chat").scrollTop() + 500);
+
+            return false;
+        }
+
+        function formatDate(date) {
+            const h = "0" + date.getHours();
+            const m = "0" + date.getMinutes();
+
+            return `${h.slice(-2)}:${m.slice(-2)}`;
+        }
+    });
+</script>
